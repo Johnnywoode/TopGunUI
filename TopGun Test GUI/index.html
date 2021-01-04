@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TopGun</title>
+
+  <link rel="stylesheet" href="assets/css/dataTables.bootstrap4.min.css">
+  <link rel="stylesheet" href="assets/css/jquery.dataTables.min.css">
+  <link rel="stylesheet" href="assets/css/myBootstrap.min.css">
+  <link rel="stylesheet" href="assets/css/jquery-ui.css">
+
+
+</head>
+<body class="hold-transition sidebar-mini pt-4">
+<div class="container rounded" style="background:#eeede8;">
+  <nav class="navbar navbar-expand navbar-dark navbar-light rounded">
+    <!-- SEARCH FORM -->
+    <form id="main-search-form" class="form-inline mx-auto col-sm-8" method="GET">
+      <div class="input-group input-group-sm w-100">
+        <input id="search-input" name="search-input" class="form-control form-control-navbar" type="search" placeholder="Search" aria-label="Search" autocomplete="false" autofocus>
+        <div class="input-group-append">
+          <button id="searchBtn" class="btn btn-primary btn-sm" type="submit" >
+            <i class="fas fa-search"> Search </i>
+          </button>
+        </div>
+      </div>
+    </form>
+  </nav>
+  
+  <div class="container">
+    <section class="content-header">
+      <div class="container-fluid">
+        <div class="row mb-2">
+            <h1>TopGun</h1>
+        </div>
+      </div>
+    </section>
+
+    <section class="content">
+      <div class="container-fluid">
+        <div class="row">
+          <div class="col-12">
+
+            <div id="search-result-card" class="card card-outline card-primary" style="display: none;">
+              <div class="card-header">
+                <h3 class="card-title">Showing Results for "<mark id="search-key">---</mark>"</h3>
+              </div>
+              <div class="card-body" style="overflow-x: scroll;">
+                <table id="example1" class="tableExample table table-bordered table-striped" width="100%"></table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+  <footer class="">
+    <div class="d-none d-sm-block">
+        <center><strong>@TopGun <script>document.write(new Date().getFullYear())</script></strong></center>
+    </div>
+    
+  </footer>
+</div>
+
+<script src="assets/js/jquery-3.5.1.js"></script>
+<script src="assets/js/jquery-ui.js"></script>
+<script src="assets/js/jquery.dataTables.min.js"></script>
+
+<script src="assets/js/data.js"></script>
+<script>
+  var allocation = TOPGUN_HEADERS.allocation.map(header=>{ var obj = new Object(); obj.title=header; return obj;});
+  var allocByClass = TOPGUN_HEADERS.allocByClass.map(header=>{ var obj = new Object(); obj.title=header; return obj; });
+  var cpu = TOPGUN_HEADERS.cpu.map(header=>{ var obj = new Object(); obj.title=header; return obj; });
+  var headers = {
+      "allocation":allocation,
+      "allocByClass":allocByClass,
+      "cpu":cpu
+  };
+  function getHeader(selected){
+    if(selected.search("-allocation-") != -1){
+        return headers["allocation"];
+    }else if( selected.search("alloc-by-class") != -1){
+        return headers["allocByClass"];
+    }else{
+        return headers["cpu"];
+    }
+  }
+</script>
+
+<script>
+  $(function(){
+    $('input[name="search-input"]').on('input', function(){
+      showSuggestions();
+    });
+  });
+
+  $('#main-search-form').submit(function(e){
+    e.preventDefault();
+    searchAndDisplay();
+  });
+</script>
+
+
+<!-- =========================FUNCTIONS================== -->
+<script>
+  function showResultCard(searchKey){
+    $('#search-result-card').hide(0, function(){
+      $('#search-key').html(searchKey);
+      $("a #homeBtn").addClass("btn-link").attr("href", "#");
+      $(this).show('slow');
+    });
+  }
+
+  function showSuggestions(){
+    var searchKey = $("input[name='search-input']").val();
+    var dataSet = TOPGUN_DATA[searchKey];
+
+    var categories = [];
+    Object.keys(TOPGUN_DATA).forEach(function(item) {
+        categories.push({label:item});
+    });
+    $.widget( "custom.catcomplete", $.ui.autocomplete, {
+      _create: function() {
+        this._super();
+        this.widget().menu( "option", "items", "> :not(.ui-autocomplete-category)" );
+      },
+      _renderMenu: function( ul, items ) {
+        var that = this,
+          currentCategory = "";
+        $.each( items, function( index, item ) {
+          var li;
+          item.category = "Aggregation Views (" + items.length + " Results";
+          if ( item.category != currentCategory ) {
+            ul.append( "<li class='ui-autocomplete-category text-muted border border-bottom-gray'><center>" + item.category + "</center></li>" );
+            currentCategory = item.category;
+          }
+          li = that._renderItemData( ul, item );
+          if ( item.category ) {
+            li.attr( "aria-label", item.category + " : " + item.label );
+          }
+        });
+      }
+    });
+    var data = categories;
+ 
+    $( "#search-input" ).catcomplete({
+      delay: 0,
+      source: data
+    });
+  }
+
+  function initializeDataTable(dataSet, searchKey){
+    $('.tableExample').DataTable( {
+      "autoWidth": true,
+      data: dataSet,
+      columns: getHeader(searchKey)
+    });
+  }
+
+  function checkIfDefined(dataSet){
+    if(dataSet == undefined){
+      return false;
+    }
+    return true;
+  }
+
+  function searchAndDisplay(){
+    var searchKey = $("input[name='search-input']").val();
+    var dataSet = TOPGUN_DATA[searchKey];
+    if(!checkIfDefined(dataSet)){
+      alert('Invalid search params');
+      return false;
+    }
+    initializeDataTable(dataSet, searchKey);
+    showResultCard(searchKey);
+  }
+</script>
+
+<script>
+</script>
+
+</body>
+</html>
